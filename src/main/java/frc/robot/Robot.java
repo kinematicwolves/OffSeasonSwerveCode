@@ -1,22 +1,20 @@
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.constraint.*;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 
-public class Robot extends TimedRobot {
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-	// Change the initialization heree if the control scheme is not a joystick
-	private Joystick joys = new Joystick(Constants.joys_ID);
+public class Robot extends TimedRobot {
+	private Joystick joys = new Joystick(Constants.joys_ID); 
 
 	private Translation2d FL2d = new Translation2d(Constants.Length / 2, Constants.Width / 2);
 	private Translation2d FR2d = new Translation2d(Constants.Length / 2, -Constants.Width / 2);
@@ -27,8 +25,6 @@ public class Robot extends TimedRobot {
 	private SwerveModuleState[] states;
 	private ChassisSpeeds cSpeeds;
 
-	// Change the initialization here if motors are not TalonFXs or if encoders are
-	// not CANcoders
 	private CANCoder encoderFL = new CANCoder(Constants.encoders[0]);
 	private CANCoder encoderFR = new CANCoder(Constants.encoders[1]);
 	private CANCoder encoderBL = new CANCoder(Constants.encoders[2]);
@@ -51,15 +47,12 @@ public class Robot extends TimedRobot {
 
 	public void motorPID(double angle, CANCoder encoder, TalonFX motor, PIDController pid, double offset) {
 		double currentPos = encoder.getPosition() + offset;
-
-		//System.out.println(currentPos);
-		//System.out.println("");
+			SmartDashboard.putNumber("Current Encoder Position", currentPos);
 
 		pid.setSetpoint(angle);
 		double out = pid.calculate(currentPos);
-
-		//System.out.println(out);
-		//System.out.println("");
+			SmartDashboard.putNumber("Out", out); // I would give this a better label but I don't know what "out" is
+													  // It looks like it's the setpoint but I want to double check with Ash or Armando
 
 		motor.set(ControlMode.PercentOutput, out);
 	}
@@ -96,9 +89,9 @@ public class Robot extends TimedRobot {
 
 		double vX = 0; // Velocity X
 		double vY = 0; // Velocity Y
-		double theta = 1;
-		double omega = 0;
+		double omega = 0; // Idk why this is named omega when it's really just velocity Z
 
+	// No idea what the math is doing here
 		if (Math.abs(joysY) > Constants.xBlind) {
 			vX = joysY*-.1;
 		}
@@ -107,61 +100,62 @@ public class Robot extends TimedRobot {
 		}
 		if (Math.abs(joysZ) > Constants.zBlind) {
 			omega = joysZ*.2;
-		}
-		
-		/*
-		System.out.print("vX: ");
-		System.out.print(vX);
-		System.out.print(", vY: ");
-		System.out.print(vY);
-		System.out.print(", Omega: ");
-		System.out.println(omega);
-		*/
+		}  
 
 		cSpeeds = new ChassisSpeeds(vX, vY, omega);
-
 		states = SDK.toSwerveModuleStates(cSpeeds);
+	
+	// I think this will print chassis speed but I don't know what the unit is
+		SmartDashboard.putNumber("x Velocity: ", vX);
+		SmartDashboard.putNumber("y Velocity: ", vY); 
+		SmartDashboard.putNumber("Omega: ", omega); 
 
-		//System.out.println(states[0].speedMetersPerSecond * Constants.driveMod);
-		/*
-		System.out.print("1: ");
-		System.out.print(states[0].speedMetersPerSecond * Constants.driveMod);
-		System.out.print(", 2: ");
-		System.out.print( states[1].speedMetersPerSecond * Constants.driveMod);
-		System.out.print(", 3: ");
-		System.out.print( states[2].speedMetersPerSecond * Constants.driveMod);
-		System.out.print(", 4: ");
-		System.out.println(states[3].speedMetersPerSecond * Constants.driveMod);
-		*/
 		driveFL.set(ControlMode.PercentOutput, states[0].speedMetersPerSecond * Constants.driveMod);
 		driveFR.set(ControlMode.PercentOutput, states[1].speedMetersPerSecond * Constants.driveMod);
 		driveBL.set(ControlMode.PercentOutput, states[2].speedMetersPerSecond * Constants.driveMod);
 		driveBR.set(ControlMode.PercentOutput, states[3].speedMetersPerSecond * Constants.driveMod);
-		
 
+	// This is the way to actually print out the data from before but I'm not sure if your trying to get the speed of the drive motors?
+	// If so, I don't think this will work
+	// I actually don't know what it will print but I kinda want to find out anyways so I'll just leave it here
+		SmartDashboard.putNumber("Foward Left Speed (Meters per second): ", states[0].speedMetersPerSecond * Constants.driveMod);
+		SmartDashboard.putNumber("Foward Right Speed (Meters per second): ", states[1].speedMetersPerSecond * Constants.driveMod);
+		SmartDashboard.putNumber("Back Left Speed (Meters per second): ", states[2].speedMetersPerSecond * Constants.driveMod);
+		SmartDashboard.putNumber("Back Right Speed (Meters per second): ", states[3].speedMetersPerSecond * Constants.driveMod);
+
+	/*
+	 * Equation to get wheel speed in meters per second:
+	 * RPM = senser units / encoder revolutions * 1000 * 60 * gear ratio
+	 * RPM * 2pi * wheel radius / 60 = wheel speed meters per second
+	 * 
+	 * I would write it in code but I don't have the gear ration or the wheel radius
+	 */
+
+	// I don't know if this should be commented out
 		/*
 		steerFL.set(ControlMode.PercentOutput, states[0].speedMetersPerSecond * Constants.driveMod);
 		steerFR.set(ControlMode.PercentOutput, states[1].speedMetersPerSecond * Constants.driveMod);
 		steerBL.set(ControlMode.PercentOutput, states[2].speedMetersPerSecond * Constants.driveMod);
 		steerBR.set(ControlMode.PercentOutput, states[3].speedMetersPerSecond * Constants.driveMod);
 		*/
+		
 		double angleFL = states[0].angle.getDegrees();
 		double angleFR = states[1].angle.getDegrees();
 		double angleBL = states[2].angle.getDegrees();
 		double angleBR = states[3].angle.getDegrees();
-		/*
-		System.out.print("Angle FL: ");
-		System.out.print(angleFL);
-		System.out.print(", Angle FR: ");
-		System.out.print(angleFR);
-		System.out.print(", Angle BL: ");
-		System.out.print( angleBL);
-		System.out.print(", Angle BR: ");
-		System.out.println(angleBR);*/
+	 
+		SmartDashboard.putNumber("Fornt Left Angle (degrees): ", angleFL);
+		SmartDashboard.putNumber("Front Right Angle (degrees): ", angleFR);
+		SmartDashboard.putNumber("Back Left Angle (degrees): ", angleBL);
+		SmartDashboard.putNumber("Back Right Angle (degrees): ", angleBR);
 
-		// Optimization due to encoder offset problems.
-		// Delete the if statement if it is causing problems.
+		motorPID(angleFL, encoderFL, steerFL, pidFL, Constants.offsetFL);
+		motorPID(angleFR, encoderFR, steerFR, pidFR, Constants.offsetFR);
+		motorPID(angleBL, encoderBL, steerBL, pidBL, Constants.offsetBL);
+		motorPID(angleBR, encoderBR, steerBR, pidBR, Constants.offsetBR);
 		
+	// I have no idea what the hell is going on here but these are all just printing constants
+	// I don't think shuffle board will even print these so specify what exactly your looking for
 		/*
 		System.out.print("E FL: "); //com.ctre.phoenix.sensors.CANCoder
 		System.out.print(encoderFL);
@@ -192,10 +186,6 @@ public class Robot extends TimedRobot {
 		System.out.print(", E BR: ");
 		System.out.println(pidBR);*/
 
-		motorPID(angleFL, encoderFL, steerFL, pidFL, Constants.offsetFL);
-		motorPID(angleFR, encoderFR, steerFR, pidFR, Constants.offsetFR);
-		motorPID(angleBL, encoderBL, steerBL, pidBL, Constants.offsetBL);
-		motorPID(angleBR, encoderBR, steerBR, pidBR, Constants.offsetBR);
 	}
 
 	@Override
