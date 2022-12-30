@@ -16,7 +16,7 @@ public class Constants {
     public final static int encBL_ID = 9;
     public final static int dBR_ID = 10; // br -> back right
     public final static int sBR_ID = 11;
-    public final static int encBR_ID = 12;
+    public final static int encBR_ID = 12; //Alexander Montesinos coded this. Esteban knows how To code too! 
 
     public final static int[] driveMotors = {dFL_ID, dFR_ID, dBL_ID, dBR_ID};
     public final static int[] steerMotors = {sFL_ID, sFR_ID, sBL_ID, sBR_ID};
